@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Rate Limiter Demo (3 Modes)</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: radial-gradient(circle at top, #1a1a1a, #0d0d0d);
+            color: #fff;
+            text-align: center;
+        }
+
+        h1 {
+            margin-top: 40px;
+            font-size: 40px;
+            letter-spacing: 1px;
+            color: #00eaff;
+            text-shadow: 0 0 10px #00eaff;
+        }
+
+        p {
+            color: #ccc;
+            font-size: 18px;
+        }
+
+        /* Main Menu Buttons */
+        .menu-btn {
+            padding: 15px 25px;
+            margin: 10px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(45deg, #007bff, #00eaff);
+            font-size: 18px;
+            cursor: pointer;
+            color: white;
+            transition: 0.3s;
+            box-shadow: 0 0 8px #007bff88;
+        }
+
+        .menu-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 0 15px #00eaffaa;
+        }
+
+        /* Card Style Box */
+        .box {
+            width: 90%;
+            max-width: 420px;
+            margin: 25px auto;
+            padding: 25px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {opacity: 0; transform: translateY(10px);}
+            to {opacity: 1; transform: translateY(0);}
+        }
+
+        input {
+            width: 85%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 6px;
+            border: none;
+            outline: none;
+            background: #333;
+            color: white;
+            font-size: 16px;
+        }
+
+        .action-btn {
+            padding: 12px 20px;
+            background: linear-gradient(45deg, #00c853, #00e676);
+            border: none;
+            border-radius: 8px;
+            font-size: 17px;
+            color: white;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: 0.3s;
+            box-shadow: 0 0 10px #00e67688;
+        }
+
+        .action-btn:hover {
+            transform: scale(1.07);
+            box-shadow: 0 0 15px #00e676aa;
+        }
+
+        .message {
+            margin-top: 15px;
+            font-size: 18px;
+            min-height: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<h1> Rate Limiter Demo</h1>
+<p>Select a feature to test live rate-limiting:</p>
+
+<!-- MENU BUTTONS -->
+<button onclick="show('login')" class="menu-btn">2️⃣ Login Attempt Limiter</button>
+<button onclick="show('button')" class="menu-btn">3️⃣ Button Spam Limiter</button>
+<button onclick="show('chat')" class="menu-btn">4️⃣ Chat Message Limiter</button>
+
+<!-- ============ LOGIN BOX ============ -->
+<div id="login" class="box">
+    <h2>🔐 Login Demo</h2>
+    <input id="user" placeholder="Username">
+    <input id="pass" placeholder="Password" type="password">
+    <button onclick="login()" class="action-btn">Login</button>
+    <p id="loginMsg" class="message"></p>
+</div>
+
+<!-- ============ BUTTON SPAM BOX ============ -->
+<div id="button" class="box">
+    <h2>⚡ Spam Button Demo</h2>
+    <button onclick="tap()" class="action-btn">TAP FAST!</button>
+    <p id="btnMsg" class="message"></p>
+</div>
+
+<!-- ============ CHAT BOX ============ -->
+<div id="chat" class="box">
+    <h2>💬 Chat Demo</h2>
+    <input id="msg" placeholder="Type your message here...">
+    <button onclick="sendMsg()" class="action-btn">Send</button>
+    <p id="chatMsg" class="message"></p>
+</div>
+
+<script>
+function show(id) {
+    document.getElementById("login").style.display = "none";
+    document.getElementById("button").style.display = "none";
+    document.getElementById("chat").style.display = "none";
+
+    document.getElementById(id).style.display = "block";
+}
+
+/* ------------ LOGIN DEMO ------------ */
+async function login() {
+    const username = document.getElementById("user").value;
+    const password = document.getElementById("pass").value;
+
+    const res = await fetch("/login", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ username, password })
+    });
+
+    const data = await res.json();
+    const msg = document.getElementById("loginMsg");
+
+    if (data.blocked) msg.innerHTML = `<span style='color:#ff4444;'>${data.message}</span>`;
+    else if (data.success) msg.innerHTML = `<span style='color:#00e676;'>Login Successful!</span>`;
+    else msg.innerHTML = data.message;
+}
+
+/* ------------ BUTTON DEMO ------------ */
+async function tap() {
+    const res = await fetch("/click",{method:"POST"});
+    const data = await res.json();
+    const msg = document.getElementById("btnMsg");
+
+    if (data.blocked) msg.innerHTML = `<span style='color:#ff4444;'>${data.message}</span>`;
+    else msg.innerHTML = `<span style='color:#00eaff;'>${data.message}</span>`;
+}
+
+/* ------------ CHAT DEMO ------------ */
+async function sendMsg() {
+    const text = document.getElementById("msg").value;
+
+    const res = await fetch("/message", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ text })
+    });
+
+    const data = await res.json();
+    const msg = document.getElementById("chatMsg");
+
+    if (data.blocked) msg.innerHTML = `<span style='color:#ff4444;'>${data.message}</span>`;
+    else msg.innerHTML = `<span style='color:#00eaff;'>Server: ${data.echo}</span>`;
+}
+</script>
+
+</body>
+</html>
